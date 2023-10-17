@@ -191,6 +191,7 @@ const CommitCard = () => {
   }
 
   const handleClick = async () => {
+    console.log('in click')
     if (typeof allowance !== 'bigint') return
 
     if (!isAllowanceSufficient) {

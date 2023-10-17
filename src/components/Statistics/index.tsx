@@ -34,7 +34,7 @@ const Statistics = () => {
         <Typography sx={{ fontSize: '38px', fontWeight: 'bold' }}>
           Battle Royale Game Tokenomics
         </Typography>
-        <Box
+        {/* <Box
           sx={{
             width: 171,
             height: 10,
@@ -44,7 +44,7 @@ const Statistics = () => {
             bottom: 8,
             left: 'calc(50% - 85px)',
           }}
-        />
+        /> */}
       </Box>
 
       <RowCenterY sx={{ gap: 54, mt: 70 }}>
