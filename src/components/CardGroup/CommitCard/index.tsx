@@ -14,7 +14,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
-import { formatEther, formatUnits, parseUnits } from 'viem'
+import { formatEther, formatUnits, parseEther, parseUnits } from 'viem'
 import {
   erc20ABI,
   useAccount,
@@ -239,6 +239,11 @@ const CommitCard = () => {
 
   const isDisabled = isLoading
 
+  const percentage =
+    allocation && userCommited
+      ? Number((userCommited * BigInt(100)) / (allocation + userCommited))
+      : 0
+
   return (
     <Wrapper>
       <RowCenterY sx={{ gap: 8 }}>
@@ -263,7 +268,7 @@ const CommitCard = () => {
           color: '#39E285',
         }}
       >
-        30%
+        {percentage}%
       </Typography>
 
       <LinearProgress
@@ -278,7 +283,7 @@ const CommitCard = () => {
           },
         }}
         variant="determinate"
-        value={30}
+        value={percentage}
       />
 
       <Typography
