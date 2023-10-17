@@ -1,3 +1,4 @@
+import { usePayments } from '@/hooks/ieo'
 import React from 'react'
 import { erc20ABI, useContractRead, useNetwork } from 'wagmi'
 import { readContract } from 'wagmi/actions'
@@ -24,6 +25,9 @@ const TestPage = () => {
   // })
 
   // console.log('readResult: ', readResult)
+
+  const { data } = usePayments()
+  console.log('data: ', data)
 
   return (
     <div>

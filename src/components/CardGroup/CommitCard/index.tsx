@@ -1,6 +1,9 @@
 import { RowCenterBetween, RowCenterY } from '@/components/common'
 import { IEO_ADDRESS, USDT_ADDRESS } from '@/constants/token'
+import { useAllowance, useApprove, useBalanceOf } from '@/hooks/erc20'
+import { useCommitUsdt } from '@/hooks/ieo'
 import { useDebounce } from '@/hooks/useDebounce'
+import { formatNumber } from '@/utils/number'
 import {
   Box,
   Button,
@@ -10,20 +13,12 @@ import {
   Typography,
   styled,
 } from '@mui/material'
+import { parseUnits } from 'ethers/lib/utils'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
-import { formatEther, formatUnits, parseEther, parseUnits } from 'viem'
-import {
-  erc20ABI,
-  useAccount,
-  useBalance,
-  useContractRead,
-  useContractWrite,
-  usePrepareContractWrite,
-  useWaitForTransaction,
-} from 'wagmi'
+import { erc20ABI, useAccount, useContractRead } from 'wagmi'
 
 const Wrapper = styled(Box)`
   margin-top: 86px;
@@ -44,23 +39,21 @@ const CommitCard = () => {
 
   const { address } = useAccount()
 
-  const { data: balance } = useBalance({
-    address,
-    token: USDT_ADDRESS,
+  // const { data: balance } = useBalance({
+  //   address,
+  //   token: USDT_ADDRESS,
+  // })
+
+  const { data: usdtBalance, refresh: refreshUsdtBalance } = useBalanceOf({
+    tokenAddress: USDT_ADDRESS,
+    ownerAddress: address,
   })
 
   const {
-    data: allowance,
-    isError: allowanceError,
-    isLoading: isFetchingAllowance,
-    refetch: refetchAllowance,
-  } = useContractRead({
-    address: USDT_ADDRESS,
-    abi: erc20ABI,
-    functionName: 'allowance',
-    enabled: !!address,
-    args: [address || '0x', IEO_ADDRESS],
-  })
+    data: usdtAllowance,
+    runAsync: getUsdtAllowance,
+    refresh: refreshUsdtAllowance,
+  } = useAllowance(USDT_ADDRESS, IEO_ADDRESS)
 
   const { data: userCommited, refetch: refetchUserCommited } = useContractRead({
     address: IEO_ADDRESS,
@@ -91,11 +84,14 @@ const CommitCard = () => {
   })
 
   const isBalanceSufficient =
-    balance &&
+    usdtBalance &&
     debouncedAmount &&
-    parseUnits(debouncedAmount, 6) <= balance.value
+    parseUnits(debouncedAmount, 6).lte(usdtBalance)
+
   const isAllowanceSufficient =
-    allowance && debouncedAmount && parseUnits(debouncedAmount, 6) <= allowance
+    usdtAllowance &&
+    debouncedAmount &&
+    parseUnits(debouncedAmount, 6).lte(usdtAllowance)
 
   const { data: allocation, refetch: refetchAllocation } = useContractRead({
     address: IEO_ADDRESS,
@@ -125,120 +121,51 @@ const CommitCard = () => {
     args: [address || '0x'],
   })
 
-  const { config: approveConfig, isLoading: isApproving } =
-    usePrepareContractWrite({
-      address: USDT_ADDRESS,
-      abi: erc20ABI,
-      functionName: 'approve',
-      enabled: !!debouncedAmount,
-      args: [IEO_ADDRESS, parseUnits(debouncedAmount, 6)],
-    })
-  const { data: approveData, writeAsync: approve } =
-    useContractWrite(approveConfig)
-  const { isSuccess: isApproveSuccess } = useWaitForTransaction({
-    hash: approveData?.hash,
-  })
-
-  const { config: commitConfig } = usePrepareContractWrite({
-    address: IEO_ADDRESS,
-    abi: [
-      {
-        inputs: [
-          {
-            internalType: 'uint256',
-            name: 'amount',
-            type: 'uint256',
-          },
-        ],
-        name: 'purchase',
-        outputs: [],
-        stateMutability: 'nonpayable',
-        type: 'function',
-      },
-    ] as const,
-    functionName: 'purchase',
-    enabled:
-      !!debouncedAmount || !!isAllowanceSufficient || !!isBalanceSufficient,
-    args: [parseUnits(debouncedAmount, 6)],
-    // args: [parseEther('1')],
-  })
-  const {
-    data: commitData,
-    write: commit,
-    isLoading: isCommiting,
-  } = useContractWrite(commitConfig)
-
-  const { isSuccess: isCommitSuccess } = useWaitForTransaction({
-    hash: commitData?.hash,
-  })
-
-  const isLoading = isApproving || isCommiting
-
-  const getLabel = () => {
-    if (!address) return 'Stake'
-
-    if (typeof allowance !== 'bigint') return 'Failed to fetch allowance'
-
-    if (isLoading) return <CircularProgress sx={{ color: '#FFF' }} size={36} />
-
-    if (!isAllowanceSufficient) return 'Approve'
-
-    if (!balance?.value) return 'Failed to fetch balance'
-
-    if (!isBalanceSufficient) return 'Insufficient balance'
-
-    return 'Stake'
-  }
-
-  const handleClick = async () => {
-    console.log('in click')
-    if (typeof allowance !== 'bigint') return
-
-    if (!isAllowanceSufficient) {
-      const tx = await approve?.()
-      const { data: _allowance } = await refetchAllowance()
-
-      console.log(
-        '>>> _allowance: ',
-        _allowance,
-        parseUnits(debouncedAmount, 6),
-      )
-      console.log(
-        '>>> parseUnits(debouncedAmount, 6) <= _allowance: ',
-        _allowance
-          ? parseUnits(debouncedAmount, 6) <= _allowance
-          : 'no _allowance',
-      )
-
-      if (_allowance && parseUnits(debouncedAmount, 6) <= _allowance) {
-        commit?.()
-      }
-    } else {
-      commit?.()
-    }
-  }
-
-  useEffect(() => {
-    if (isApproveSuccess) {
-      refetchAllowance()
+  const { runAsync: approve, loading: isApproving } = useApprove(USDT_ADDRESS, {
+    onSuccess: () => {
+      refreshUsdtAllowance()
       toast.success('Approve Successfully!')
-      // setOpenBar1(true)
-    }
-  }, [isApproveSuccess])
+    },
+  })
 
-  console.log('>> isDepositSuccess: ', isCommitSuccess)
-  useEffect(() => {
-    if (isCommitSuccess) {
-      refetchAllowance()
+  const { run: commitUsdt, loading: isCommitingUsdt } = useCommitUsdt({
+    onSuccess: () => {
+      refreshUsdtAllowance()
       refetchAllocation()
       refetchUserCommited()
       toast.success('Commit Successfully!', {
         toastId: 'commit',
       })
-    }
-  }, [isCommitSuccess])
+    },
+  })
 
-  const isDisabled = isLoading
+  const isLoading = isApproving || isCommitingUsdt
+
+  const getLabel = () => {
+    if (isLoading) return <CircularProgress sx={{ color: '#FFF' }} size={36} />
+
+    if (!isBalanceSufficient) return 'Insufficient balance'
+
+    return 'Commit'
+  }
+
+  const handleClick = async () => {
+    console.log('in click')
+    if (!usdtAllowance) return
+
+    if (!isAllowanceSufficient) {
+      await approve(IEO_ADDRESS, parseUnits(debouncedAmount, 6))
+      const _allowance = await getUsdtAllowance()
+
+      if (_allowance && parseUnits(debouncedAmount, 6).lte(_allowance)) {
+        commitUsdt({ amount: parseUnits(debouncedAmount, 6) })
+      }
+    } else {
+      commitUsdt({ amount: parseUnits(debouncedAmount, 6) })
+    }
+  }
+
+  const isDisabled = isLoading || !debouncedAmount
 
   const percentage =
     allocation && userCommited
@@ -301,9 +228,7 @@ const CommitCard = () => {
             color: '#39E285',
           }}
         >
-          {allocation !== undefined
-            ? Number(formatUnits(allocation, 6)).toFixed()
-            : '-'}
+          {allocation !== undefined ? formatNumber(allocation, 6) : '-'}
         </Typography>
       </Typography>
 
@@ -333,7 +258,7 @@ const CommitCard = () => {
             color: '#39E285',
           }}
         >
-          {userCommited !== undefined ? formatUnits(userCommited, 6) : '-'}
+          {userCommited !== undefined ? formatNumber(userCommited, 6) : '-'}
         </Typography>
         &nbsp;USDT
       </Typography>
@@ -346,7 +271,7 @@ const CommitCard = () => {
             lineHeight: '16px',
           }}
         >
-          Available: {balance !== undefined ? balance.formatted : '-'} USDT
+          Available: {usdtBalance ? formatNumber(usdtBalance, 6) : '-'} USDT
         </Typography>
 
         <Link href="/" style={{ textDecorationLine: 'none', color: 'unset' }}>
