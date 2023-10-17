@@ -21,7 +21,7 @@ const TotalStatistics = ({ data }: { data: bigint | undefined }) => {
           color: '#39E0E2',
         }}
       >
-        {data ? formatEther(data) : '-'}
+        {data !== undefined ? formatEther(data) : '-'}
       </Typography>
       &nbsp;/ 5,500,000,000
     </Typography>

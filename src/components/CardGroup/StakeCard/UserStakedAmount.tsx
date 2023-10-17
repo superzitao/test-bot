@@ -33,7 +33,7 @@ const UserStakedAmount = ({ data }: { data: bigint | undefined }) => {
             color: '#39E0E2',
           }}
         >
-          {data ? formatEther(data) : '-'}
+          {data !== undefined ? formatEther(data) : '-'}
         </Typography>
         &nbsp;AIBOT
       </Typography>
