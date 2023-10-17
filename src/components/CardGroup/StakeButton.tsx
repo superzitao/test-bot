@@ -105,6 +105,8 @@ const StakeButton = ({
   )
 
   const getLabel = () => {
+    if (!amount) return 'Stake'
+
     if (isLoading) return <CircularProgress sx={{ color: '#FFF' }} size={36} />
 
     if (!isBalanceSufficient) return 'Insufficient balance'
@@ -141,7 +143,8 @@ const StakeButton = ({
 
   const isDisabled =
     isLoading ||
-    !debouncedAmount /* || !isBalanceSufficient || !isAllowanceSufficient */
+    !debouncedAmount ||
+    !isBalanceSufficient /* || !isBalanceSufficient || !isAllowanceSufficient */
 
   // useEffect(() => {
   //   refetchAllowance()

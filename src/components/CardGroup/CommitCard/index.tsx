@@ -142,6 +142,8 @@ const CommitCard = () => {
   const isLoading = isApproving || isCommitingUsdt
 
   const getLabel = () => {
+    if (!amount) return 'Commit'
+
     if (isLoading) return <CircularProgress sx={{ color: '#FFF' }} size={36} />
 
     if (!isBalanceSufficient) return 'Insufficient balance'
@@ -165,7 +167,7 @@ const CommitCard = () => {
     }
   }
 
-  const isDisabled = isLoading || !debouncedAmount
+  const isDisabled = isLoading || !debouncedAmount || !isBalanceSufficient
 
   const percentage =
     allocation && userCommited
