@@ -1,10 +1,9 @@
-import { IEO_ADDRESS } from '@/constants/token'
+import { formatNumber } from '@/utils/number'
 import { Typography } from '@mui/material'
+import { BigNumber } from 'ethers'
 import React from 'react'
-import { formatEther } from 'viem'
-import { useContractRead } from 'wagmi'
 
-const TotalStatistics = ({ data }: { data: bigint | undefined }) => {
+const TotalStatistics = ({ data }: { data: BigNumber | undefined }) => {
   console.log('data: ', data)
 
   return (
@@ -21,7 +20,7 @@ const TotalStatistics = ({ data }: { data: bigint | undefined }) => {
           color: '#39E0E2',
         }}
       >
-        {data !== undefined ? formatEther(data) : '-'}
+        {data !== undefined ? formatNumber(data) : '-'}
       </Typography>
       &nbsp;/ 5,500,000,000
     </Typography>

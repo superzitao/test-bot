@@ -1,10 +1,8 @@
-import { IEO_ADDRESS } from '@/constants/token'
+import { formatNumber } from '@/utils/number'
 import { Typography } from '@mui/material'
-import React from 'react'
-import { formatEther } from 'viem'
-import { useAccount, useContractRead } from 'wagmi'
+import { BigNumber } from 'ethers'
 
-const UserStakedAmount = ({ data }: { data: bigint | undefined }) => {
+const UserStakedAmount = ({ data }: { data: BigNumber | undefined }) => {
   return (
     <>
       <Typography
@@ -33,7 +31,7 @@ const UserStakedAmount = ({ data }: { data: bigint | undefined }) => {
             color: '#39E0E2',
           }}
         >
-          {data !== undefined ? formatEther(data) : '-'}
+          {data !== undefined ? formatNumber(data) : '-'}
         </Typography>
         &nbsp;AIBOT
       </Typography>

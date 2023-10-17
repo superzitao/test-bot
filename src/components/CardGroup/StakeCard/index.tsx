@@ -17,7 +17,9 @@ import UserStakedAmount from './UserStakedAmount'
 import Stake from './Stake'
 import { useAccount, useBalance, useContractRead } from 'wagmi'
 import { AIBOT_ADDRESS, IEO_ADDRESS } from '@/constants/token'
-import { formatEther, parseEther } from 'viem'
+import { parseEther } from 'viem'
+import { useAibotTotalAmount, useUserDepositAibot } from '@/hooks/ieo'
+import { useBalanceOf } from '@/hooks/erc20'
 
 const Wrapper = styled(Box)`
   margin-top: 21px;
@@ -33,85 +35,25 @@ const Wrapper = styled(Box)`
 `
 
 const StakeCard = () => {
-  const { data: aibotTotalAmount, refetch: reFetchAibotTotalAmount } =
-    useContractRead({
-      address: IEO_ADDRESS,
-      abi: [
-        {
-          inputs: [],
-          name: 'aibotTotalAmount',
-          outputs: [
-            {
-              internalType: 'uint256',
-              name: '',
-              type: 'uint256',
-            },
-          ],
-          stateMutability: 'view',
-          type: 'function',
-        },
-      ] as const,
-      functionName: 'aibotTotalAmount',
-    })
+  const { data: aibotTotalAmount, refresh: refreshAibotTotalAmount } =
+    useAibotTotalAmount()
 
   const { address } = useAccount()
-  const { data: userDepositAmount, refetch: refetchUserDepositAmount } =
-    useContractRead({
-      address: IEO_ADDRESS,
-      abi: [
-        {
-          inputs: [
-            {
-              internalType: 'address',
-              name: '',
-              type: 'address',
-            },
-          ],
-          name: 'deposits',
-          outputs: [
-            {
-              internalType: 'uint256',
-              name: '',
-              type: 'uint256',
-            },
-          ],
-          stateMutability: 'view',
-          type: 'function',
-        },
-      ] as const,
-      functionName: 'deposits',
-      enabled: !!address,
-      args: [address || '0x'],
-    })
 
-  console.log('>>>>> userDepositAmount: ', userDepositAmount?.toString())
+  const { data: userDepositAibot, refresh: refreshUserDepositAibot } =
+    useUserDepositAibot()
 
-  const { data: balance, refetch: refetchBalance } = useBalance({
-    address,
-    token: AIBOT_ADDRESS,
+  console.log('userDepositAibot: ', userDepositAibot?.toString())
+
+  const { data: aibotBalance, refresh: refreshAibotBalance } = useBalanceOf({
+    tokenAddress: AIBOT_ADDRESS,
+    ownerAddress: address,
   })
 
-  console.log('>>>>>>>>> aibotTotalAmount:', aibotTotalAmount?.toString())
-  console.log(
-    '>>>>>>>>> parseEther5500000000:',
-    parseEther('5500000000').toString(),
-  )
-  console.log(
-    '>>>>>>>>>  / :',
-    aibotTotalAmount
-      ? (aibotTotalAmount * BigInt(100)) / parseEther('5500000000')
-      : '',
-  )
-
-  console.log(
-    '>>>>>>>> value: ',
-    aibotTotalAmount
-      ? (aibotTotalAmount / parseEther('5500000000')) * BigInt(100)
-      : 'nulll',
-  )
-
   const percentage = aibotTotalAmount
-    ? Number((aibotTotalAmount * BigInt(100)) / parseEther('5500000000'))
+    ? Number(
+        (aibotTotalAmount.toBigInt() * BigInt(100)) / parseEther('5500000000'),
+      )
     : 0
 
   return (
@@ -159,10 +101,10 @@ const StakeCard = () => {
 
       <TotalStatistics data={aibotTotalAmount} />
 
-      <UserStakedAmount data={userDepositAmount} />
+      <UserStakedAmount data={userDepositAibot} />
 
       <RowCenterBetween sx={{ mt: 30 }}>
-        <AvailableAmount data={balance} />
+        <AvailableAmount data={aibotBalance} />
 
         <Link href="/" style={{ textDecorationLine: 'none', color: 'unset' }}>
           <Typography
@@ -181,9 +123,9 @@ const StakeCard = () => {
       <StakeButton
         onDepositSuccess={() => {
           console.log('>>>> onDepositSuccess')
-          reFetchAibotTotalAmount()
-          refetchUserDepositAmount()
-          refetchBalance()
+          refreshAibotTotalAmount()
+          refreshUserDepositAibot()
+          refreshAibotBalance()
         }}
       />
     </Wrapper>

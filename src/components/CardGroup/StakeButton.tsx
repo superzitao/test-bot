@@ -1,4 +1,6 @@
 import { AIBOT_ADDRESS, IEO_ADDRESS } from '@/constants/token'
+import { useAllowance, useApprove, useBalanceOf } from '@/hooks/erc20'
+import { useDepositAibot } from '@/hooks/ieo'
 import { useDebounce } from '@/hooks/useDebounce'
 import {
   Alert as MuiAlert,
@@ -9,9 +11,10 @@ import {
   AlertProps,
   OutlinedInput,
 } from '@mui/material'
+import { parseEther } from 'ethers/lib/utils'
 import { forwardRef, useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
-import { parseEther } from 'viem'
+
 import {
   erc20ABI,
   useAccount,
@@ -38,103 +41,56 @@ const StakeButton = ({
   const [amount, setAmount] = useState('')
   const debouncedAmount = useDebounce(amount, 500)
 
-  const [openBar1, setOpenBar1] = useState(false)
-
   const { address } = useAccount()
 
-  const { data: balance } = useBalance({
-    address,
-    token: AIBOT_ADDRESS,
+  // const { data: balance } = useBalance({
+  //   address,
+  //   token: AIBOT_ADDRESS,
+  // })
+  const { data: aibotBalance, refresh: refreshAibotBalance } = useBalanceOf({
+    tokenAddress: AIBOT_ADDRESS,
+    ownerAddress: address,
   })
 
   const {
-    data: allowance,
-    isError: allowanceError,
-    isLoading: isFetchingAllowance,
-    refetch: refetchAllowance,
-  } = useContractRead({
-    address: AIBOT_ADDRESS,
-    abi: erc20ABI,
-    functionName: 'allowance',
-    enabled: !!address,
-    args: [address || '0x', IEO_ADDRESS],
-  })
+    data: aibotAllowance,
+    runAsync: getAibotAllowance,
+    refresh: refreshAibotAllowance,
+  } = useAllowance(AIBOT_ADDRESS, IEO_ADDRESS)
 
   const isBalanceSufficient =
-    balance && debouncedAmount && parseEther(debouncedAmount) <= balance.value
+    aibotBalance &&
+    debouncedAmount &&
+    parseEther(debouncedAmount).lte(aibotBalance)
+
   const isAllowanceSufficient =
-    allowance && debouncedAmount && parseEther(debouncedAmount) <= allowance
+    aibotAllowance &&
+    debouncedAmount &&
+    parseEther(debouncedAmount).lte(aibotAllowance)
 
-  console.log('>>>> allowance: ', allowance)
+  console.log('>>>> allowance: ', aibotAllowance?.toString())
 
-  const { config: depositConfig } = usePrepareContractWrite({
-    address: IEO_ADDRESS,
-    abi: [
-      {
-        inputs: [
-          {
-            internalType: 'uint256',
-            name: 'amount',
-            type: 'uint256',
-          },
-        ],
-        name: 'deposit',
-        outputs: [],
-        stateMutability: 'nonpayable',
-        type: 'function',
-      },
-    ] as const,
-    functionName: 'deposit',
-    // enabled:
-    //   !!debouncedAmount || !!isAllowanceSufficient || !!isBalanceSufficient,
-    args: [parseEther(debouncedAmount)],
-    // args: [parseEther('1')],
-  })
-  const {
-    data: depositData,
-    write: deposit,
-    isLoading: isDepositing,
-  } = useContractWrite(depositConfig)
-
-  const { isSuccess: isDepositSuccess } = useWaitForTransaction({
-    hash: depositData?.hash,
-  })
-
-  const { config: approveConfig, isLoading: isApproving } =
-    usePrepareContractWrite({
-      address: AIBOT_ADDRESS,
-      abi: erc20ABI,
-      functionName: 'approve',
-      enabled: !!debouncedAmount,
-      args: [IEO_ADDRESS, parseEther(debouncedAmount)],
-    })
-  const { data: approveData, writeAsync: approve } =
-    useContractWrite(approveConfig)
-  const { isSuccess: isApproveSuccess } = useWaitForTransaction({
-    hash: approveData?.hash,
-  })
-
-  console.log('>>>> isApproveSuccess: ', isApproveSuccess)
-  useEffect(() => {
-    if (isApproveSuccess) {
-      refetchAllowance()
-      toast.success('Approve Successfully!')
-      // setOpenBar1(true)
-    }
-  }, [isApproveSuccess])
-
-  console.log('>> isDepositSuccess: ', isDepositSuccess)
-  useEffect(() => {
-    if (isDepositSuccess) {
+  const { run: depositAibot, loading: isDepositingAibot } = useDepositAibot({
+    onSuccess: () => {
       onDepositSuccess()
-      refetchAllowance()
+      refreshAibotAllowance()
       toast.success('Deposit Successfully!', {
         toastId: 'deposit',
       })
-    }
-  }, [isDepositSuccess])
+    },
+  })
 
-  const isLoading = isApproving || isDepositing
+  const { runAsync: approve, loading: isApproving } = useApprove(
+    AIBOT_ADDRESS,
+    {
+      onSuccess: () => {
+        refreshAibotAllowance()
+        toast.success('Approve Successfully!')
+      },
+    },
+  )
+
+  const isLoading = isApproving || isDepositingAibot
   // console.log(
   //   '> isAllowanceSufficient: ',
   //   isAllowanceSufficient,
@@ -144,20 +100,12 @@ const StakeButton = ({
   console.log(
     '> isBalanceSufficient: ',
     isBalanceSufficient,
-    parseEther(debouncedAmount),
-    balance?.value,
+    debouncedAmount ? parseEther(debouncedAmount).toString() : 'null',
+    aibotBalance?.toString(),
   )
 
   const getLabel = () => {
-    if (!address) return 'Stake'
-
-    if (typeof allowance !== 'bigint') return 'Failed to fetch allowance'
-
     if (isLoading) return <CircularProgress sx={{ color: '#FFF' }} size={36} />
-
-    if (!isAllowanceSufficient) return 'Approve'
-
-    if (!balance?.value) return 'Failed to fetch balance'
 
     if (!isBalanceSufficient) return 'Insufficient balance'
 
@@ -165,30 +113,35 @@ const StakeButton = ({
   }
 
   const handleClick = async () => {
-    if (typeof allowance !== 'bigint') return
-    console.log('>> isAllowanceSufficient 00', isAllowanceSufficient)
+    if (!aibotAllowance) return
+
     if (!isAllowanceSufficient) {
-      const tx = await approve?.()
-      const { data: _allowance } = await refetchAllowance()
+      const tx = await approve(IEO_ADDRESS, parseEther(amount))
+      const _allowance = await getAibotAllowance()
 
-      console.log('>>> _allowance: ', _allowance, parseEther(debouncedAmount))
-      console.log(
-        '>>> parseEther(debouncedAmount) <= _allowance: ',
-        _allowance
-          ? parseEther(debouncedAmount) <= _allowance
-          : 'no _allowance',
-      )
+      // console.log('>>> _allowance: ', _allowance, parseEther(debouncedAmount))
+      // console.log(
+      //   '>>> parseEther(debouncedAmount) <= _allowance: ',
+      //   _allowance
+      //     ? parseEther(debouncedAmount) <= _allowance
+      //     : 'no _allowance',
+      // )
 
-      if (_allowance && parseEther(debouncedAmount) <= _allowance) {
-        deposit?.()
+      if (_allowance && parseEther(debouncedAmount).lte(_allowance)) {
+        depositAibot({
+          amount: parseEther(debouncedAmount),
+        })
       }
     } else {
-      deposit?.()
+      depositAibot({
+        amount: parseEther(debouncedAmount),
+      })
     }
   }
 
   const isDisabled =
-    isLoading /* || !isBalanceSufficient || !isAllowanceSufficient */
+    isLoading ||
+    !debouncedAmount /* || !isBalanceSufficient || !isAllowanceSufficient */
 
   // useEffect(() => {
   //   refetchAllowance()
@@ -211,8 +164,8 @@ const StakeButton = ({
           mt: 10,
           height: 61,
           borderRadius: '16px',
-          background:
-            '#D8D8D8 linear-gradient(36deg, #25E3D5 0%, #64DAFF 100%)',
+          // background:
+          //   '#D8D8D8 linear-gradient(36deg, #25E3D5 0%, #64DAFF 100%)',
           fontSize: '25px',
           color: '#FFFFFF',
           '&:hover': {
