@@ -97,7 +97,7 @@ const StakeCard = () => {
           },
         }}
         variant="determinate"
-        value={percentage}
+        value={percentage > 100 ? 100 : percentage}
       />
 
       <TotalStatistics data={aibotTotalAmount} />
