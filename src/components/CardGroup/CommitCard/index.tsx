@@ -1,8 +1,16 @@
 import { RowCenterBetween, RowCenterY } from '@/components/common'
 import { IEO_ADDRESS, USDT_ADDRESS } from '@/constants/token'
 import { useAllowance, useApprove, useBalanceOf } from '@/hooks/erc20'
-import { useCommitUsdt } from '@/hooks/ieo'
-import { useDebounce } from '@/hooks/useDebounce'
+import {
+  useClaim,
+  useCommitUsdt,
+  useDepositDeadline,
+  usePaymentDeadlineCall,
+  usePaymentEndCountdown,
+  usePayments,
+  usePurchaseAmount,
+  useStartTime,
+} from '@/hooks/ieo'
 import { formatNumber } from '@/utils/number'
 import {
   Box,
@@ -16,9 +24,9 @@ import {
 import { parseUnits } from 'ethers/lib/utils'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'react-toastify'
-import { erc20ABI, useAccount, useContractRead } from 'wagmi'
+import { useAccount, useContractRead } from 'wagmi'
 
 const Wrapper = styled(Box)`
   margin-top: 86px;
@@ -35,14 +43,8 @@ const Wrapper = styled(Box)`
 
 const CommitCard = () => {
   const [amount, setAmount] = useState('')
-  const debouncedAmount = useDebounce(amount, 500)
 
   const { address } = useAccount()
-
-  // const { data: balance } = useBalance({
-  //   address,
-  //   token: USDT_ADDRESS,
-  // })
 
   const { data: usdtBalance, refresh: refreshUsdtBalance } = useBalanceOf({
     tokenAddress: USDT_ADDRESS,
@@ -55,71 +57,43 @@ const CommitCard = () => {
     refresh: refreshUsdtAllowance,
   } = useAllowance(USDT_ADDRESS, IEO_ADDRESS)
 
-  const { data: userCommited, refetch: refetchUserCommited } = useContractRead({
-    address: IEO_ADDRESS,
-    abi: [
-      {
-        inputs: [
-          {
-            internalType: 'address',
-            name: '',
-            type: 'address',
-          },
-        ],
-        name: 'payments',
-        outputs: [
-          {
-            internalType: 'uint256',
-            name: '',
-            type: 'uint256',
-          },
-        ],
-        stateMutability: 'view',
-        type: 'function',
-      },
-    ] as const,
-    functionName: 'payments',
-    enabled: !!address,
-    args: [address || '0x'],
-  })
-
   const isBalanceSufficient =
-    usdtBalance &&
-    debouncedAmount &&
-    parseUnits(debouncedAmount, 6).lte(usdtBalance)
+    usdtBalance && amount && parseUnits(amount, 6).lte(usdtBalance)
 
   const isAllowanceSufficient =
-    usdtAllowance &&
-    debouncedAmount &&
-    parseUnits(debouncedAmount, 6).lte(usdtAllowance)
+    usdtAllowance && amount && parseUnits(amount, 6).lte(usdtAllowance)
 
-  const { data: allocation, refetch: refetchAllocation } = useContractRead({
-    address: IEO_ADDRESS,
-    abi: [
-      {
-        inputs: [
-          {
-            internalType: 'address',
-            name: 'account',
-            type: 'address',
-          },
-        ],
-        name: 'getPurchaseAmount',
-        outputs: [
-          {
-            internalType: 'uint256',
-            name: '',
-            type: 'uint256',
-          },
-        ],
-        stateMutability: 'view',
-        type: 'function',
-      },
-    ] as const,
-    functionName: 'getPurchaseAmount',
-    enabled: !!address,
-    args: [address || '0x'],
-  })
+  const { data: userCommited, refresh: refreshUserCommited } = usePayments()
+
+  const { data: allocation, refresh: refreshAllocation } = usePurchaseAmount()
+
+  // const { data: allocation, refetch: refreshAllocation } = useContractRead({
+  //   address: IEO_ADDRESS,
+  //   abi: [
+  //     {
+  //       inputs: [
+  //         {
+  //           internalType: 'address',
+  //           name: 'account',
+  //           type: 'address',
+  //         },
+  //       ],
+  //       name: 'getPurchaseAmount',
+  //       outputs: [
+  //         {
+  //           internalType: 'uint256',
+  //           name: '',
+  //           type: 'uint256',
+  //         },
+  //       ],
+  //       stateMutability: 'view',
+  //       type: 'function',
+  //     },
+  //   ] as const,
+  //   functionName: 'getPurchaseAmount',
+  //   enabled: !!address,
+  //   args: [address || '0x'],
+  // })
 
   const { runAsync: approve, loading: isApproving } = useApprove(USDT_ADDRESS, {
     onSuccess: () => {
@@ -131,20 +105,33 @@ const CommitCard = () => {
   const { run: commitUsdt, loading: isCommitingUsdt } = useCommitUsdt({
     onSuccess: () => {
       refreshUsdtAllowance()
-      refetchAllocation()
-      refetchUserCommited()
+      refreshAllocation()
+      refreshUserCommited()
+      refreshUsdtBalance()
       toast.success('Commit Successfully!', {
         toastId: 'commit',
       })
     },
   })
 
-  const isLoading = isApproving || isCommitingUsdt
+  const { run: claim, loading: isClaiming } = useClaim({
+    onSuccess: () => {
+      toast.success('Claim Successfully!', {
+        toastId: 'claim',
+      })
+    },
+  })
+
+  const isLoading = isApproving || isCommitingUsdt || isClaiming
+
+  const [paymentEndTimeCountDown] = usePaymentEndCountdown()
 
   const getLabel = () => {
-    if (!amount) return 'Commit'
-
     if (isLoading) return <CircularProgress sx={{ color: '#FFF' }} size={36} />
+
+    if (paymentEndTimeCountDown <= 0) return 'Claim'
+
+    if (!amount) return 'Commit'
 
     if (!isBalanceSufficient) return 'Insufficient balance'
 
@@ -155,27 +142,56 @@ const CommitCard = () => {
     console.log('in click')
     if (!usdtAllowance) return
 
+    if (paymentEndTimeCountDown <= 0) {
+      return claim()
+    }
+
     if (!isAllowanceSufficient) {
-      await approve(IEO_ADDRESS, parseUnits(debouncedAmount, 6))
+      await approve(IEO_ADDRESS, parseUnits(amount, 6))
       const _allowance = await getUsdtAllowance()
 
-      if (_allowance && parseUnits(debouncedAmount, 6).lte(_allowance)) {
-        commitUsdt({ amount: parseUnits(debouncedAmount, 6) })
+      if (_allowance && parseUnits(amount, 6).lte(_allowance)) {
+        commitUsdt({ amount: parseUnits(amount, 6) })
       }
     } else {
-      commitUsdt({ amount: parseUnits(debouncedAmount, 6) })
+      commitUsdt({ amount: parseUnits(amount, 6) })
     }
   }
 
-  const isDisabled = isLoading || !debouncedAmount || !isBalanceSufficient
+  const isDisabled = isLoading || !amount || !isBalanceSufficient
 
   const percentage =
-    allocation && userCommited
-      ? Number((userCommited * BigInt(100)) / (allocation + userCommited))
+    allocation && userCommited && allocation.lt(0) && userCommited.lt(0)
+      ? Number(
+          (userCommited.toBigInt() * BigInt(100)) /
+            (allocation.toBigInt() + userCommited.toBigInt()),
+        )
       : 0
 
   return (
     <Wrapper>
+      {/* <div>
+        <ul>
+          <li>
+            start:{' '}
+            {startTime
+              ? new Date(startTime?.toNumber() * 1000).toTimeString()
+              : ''}
+          </li>
+          <li>
+            deposit end:{' '}
+            {depositEndTime
+              ? new Date(depositEndTime?.toNumber() * 1000).toTimeString()
+              : ''}
+          </li>
+          <li>
+            payment end:{' '}
+            {paymentEndTime
+              ? new Date(paymentEndTime?.toNumber() * 1000).toTimeString()
+              : ''}
+          </li>
+        </ul>
+      </div> */}
       <RowCenterY sx={{ gap: 8 }}>
         <Image src="/usdt.png" width={26} height={26} alt="usdt" priority />
         <Typography
@@ -230,7 +246,10 @@ const CommitCard = () => {
             color: '#39E285',
           }}
         >
-          {allocation !== undefined ? formatNumber(allocation, 6) : '-'}
+          {allocation !== undefined && userCommited !== undefined
+            ? // ? formatNumber(allocation + userCommited.toBigInt(), 6)
+              formatNumber(allocation.toBigInt() + userCommited.toBigInt(), 6)
+            : '-'}
         </Typography>
       </Typography>
 
@@ -296,6 +315,7 @@ const CommitCard = () => {
 
       <OutlinedInput
         color="secondary"
+        disabled={paymentEndTimeCountDown <= 0}
         sx={{ mt: 10, borderRadius: '16px', height: 61 }}
         placeholder="Commit Amount"
         endAdornment="USDT"
@@ -307,7 +327,7 @@ const CommitCard = () => {
       <Button
         variant="contained"
         color="secondary"
-        disabled={isDisabled}
+        disabled={paymentEndTimeCountDown > 0 && isDisabled}
         sx={{
           mt: 10,
           height: 61,

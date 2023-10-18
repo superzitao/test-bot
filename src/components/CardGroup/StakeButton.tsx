@@ -1,13 +1,15 @@
 import { AIBOT_ADDRESS, IEO_ADDRESS } from '@/constants/token'
 import { useAllowance, useApprove, useBalanceOf } from '@/hooks/erc20'
-import { useDepositAibot } from '@/hooks/ieo'
-import { useDebounce } from '@/hooks/useDebounce'
+import {
+  useDepositAibot,
+  useDepositEndCountdown,
+  usePaymentEndCountdown,
+  useStartTimeCountDown,
+} from '@/hooks/ieo'
 import {
   Alert as MuiAlert,
   Button,
   CircularProgress,
-  Snackbar,
-  useTheme,
   AlertProps,
   OutlinedInput,
 } from '@mui/material'
@@ -15,16 +17,7 @@ import { parseEther } from 'ethers/lib/utils'
 import { forwardRef, useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 
-import {
-  erc20ABI,
-  useAccount,
-  useBalance,
-  useContractRead,
-  useContractWrite,
-  usePrepareContractWrite,
-  useWaitForTransaction,
-} from 'wagmi'
-import { readContract } from 'wagmi/actions'
+import { useAccount } from 'wagmi'
 
 const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(
   props,
@@ -39,7 +32,7 @@ const StakeButton = ({
   onDepositSuccess: () => void
 }) => {
   const [amount, setAmount] = useState('')
-  const debouncedAmount = useDebounce(amount, 500)
+  // const debouncedAmount = useDebounce(amount, 500)
 
   const { address } = useAccount()
 
@@ -59,21 +52,21 @@ const StakeButton = ({
   } = useAllowance(AIBOT_ADDRESS, IEO_ADDRESS)
 
   const isBalanceSufficient =
-    aibotBalance &&
-    debouncedAmount &&
-    parseEther(debouncedAmount).lte(aibotBalance)
+    aibotBalance && amount && parseEther(amount).lte(aibotBalance)
 
   const isAllowanceSufficient =
-    aibotAllowance &&
-    debouncedAmount &&
-    parseEther(debouncedAmount).lte(aibotAllowance)
+    aibotAllowance && amount && parseEther(amount).lte(aibotAllowance)
 
   console.log('>>>> allowance: ', aibotAllowance?.toString())
+
+  const [startTimeCountDown, formattedRes] = useStartTimeCountDown()
+  const [depositEndCountdown] = useDepositEndCountdown()
 
   const { run: depositAibot, loading: isDepositingAibot } = useDepositAibot({
     onSuccess: () => {
       onDepositSuccess()
       refreshAibotAllowance()
+      refreshAibotBalance()
       toast.success('Deposit Successfully!', {
         toastId: 'deposit',
       })
@@ -91,23 +84,18 @@ const StakeButton = ({
   )
 
   const isLoading = isApproving || isDepositingAibot
-  // console.log(
-  //   '> isAllowanceSufficient: ',
-  //   isAllowanceSufficient,
-  //   allowance,
-  //   parseEther(amount),
-  // )
-  console.log(
-    '> isBalanceSufficient: ',
-    isBalanceSufficient,
-    debouncedAmount ? parseEther(debouncedAmount).toString() : 'null',
-    aibotBalance?.toString(),
-  )
+
+  const { days, hours, minutes, seconds } = formattedRes
 
   const getLabel = () => {
-    if (!amount) return 'Stake'
-
     if (isLoading) return <CircularProgress sx={{ color: '#FFF' }} size={36} />
+
+    if (startTimeCountDown > 0)
+      return `Start in ${days} d ${hours} h ${minutes} m ${seconds} s`
+
+    if (depositEndCountdown <= 0) return 'Ended'
+
+    if (!amount) return 'Stake'
 
     if (!isBalanceSufficient) return 'Insufficient balance'
 
@@ -121,34 +109,24 @@ const StakeButton = ({
       const tx = await approve(IEO_ADDRESS, parseEther(amount))
       const _allowance = await getAibotAllowance()
 
-      // console.log('>>> _allowance: ', _allowance, parseEther(debouncedAmount))
-      // console.log(
-      //   '>>> parseEther(debouncedAmount) <= _allowance: ',
-      //   _allowance
-      //     ? parseEther(debouncedAmount) <= _allowance
-      //     : 'no _allowance',
-      // )
-
-      if (_allowance && parseEther(debouncedAmount).lte(_allowance)) {
+      if (_allowance && parseEther(amount).lte(_allowance)) {
         depositAibot({
-          amount: parseEther(debouncedAmount),
+          amount: parseEther(amount),
         })
       }
     } else {
       depositAibot({
-        amount: parseEther(debouncedAmount),
+        amount: parseEther(amount),
       })
     }
   }
 
   const isDisabled =
     isLoading ||
-    !debouncedAmount ||
-    !isBalanceSufficient /* || !isBalanceSufficient || !isAllowanceSufficient */
-
-  // useEffect(() => {
-  //   refetchAllowance()
-  // }, [debouncedAmount, refetchAllowance])
+    !amount ||
+    !isBalanceSufficient ||
+    startTimeCountDown > 0 ||
+    depositEndCountdown <= 0
 
   return (
     <>
@@ -180,26 +158,6 @@ const StakeButton = ({
       >
         {getLabel()}
       </Button>
-
-      {/* <Snackbar
-        open={isApproveSuccess}
-        autoHideDuration={2000}
-        onClose={() => setOpenBar1(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert severity="success" sx={{ width: '100%' }}>
-          Approve Successfully!
-        </Alert>
-      </Snackbar> */}
-      {/*<Snackbar
-        open={isDepositSuccess}
-        autoHideDuration={6000}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert severity="success" sx={{ width: '100%' }}>
-          Deposit Successfully!
-        </Alert>
-      </Snackbar> */}
     </>
   )
 }

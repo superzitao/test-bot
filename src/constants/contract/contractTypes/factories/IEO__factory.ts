@@ -19,11 +19,6 @@ const _abi = [
         name: "_usdt",
         type: "address",
       },
-      {
-        internalType: "address",
-        name: "_brt",
-        type: "address",
-      },
     ],
     stateMutability: "nonpayable",
     type: "constructor",
@@ -41,12 +36,6 @@ const _abi = [
         indexed: false,
         internalType: "uint256",
         name: "aibotAmount",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "brtAmount",
         type: "uint256",
       },
       {
@@ -83,13 +72,13 @@ const _abi = [
       {
         indexed: false,
         internalType: "uint256",
-        name: "amount0",
+        name: "amount",
         type: "uint256",
       },
       {
         indexed: false,
         internalType: "uint256",
-        name: "amount1",
+        name: "rate",
         type: "uint256",
       },
     ],
@@ -205,19 +194,6 @@ const _abi = [
   },
   {
     inputs: [],
-    name: "BRT",
-    outputs: [
-      {
-        internalType: "contract IERC20",
-        name: "",
-        type: "address",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
     name: "USDT",
     outputs: [
       {
@@ -244,19 +220,6 @@ const _abi = [
   },
   {
     inputs: [],
-    name: "brtTotalAmount",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
     name: "claim",
     outputs: [],
     stateMutability: "nonpayable",
@@ -266,17 +229,12 @@ const _abi = [
     inputs: [
       {
         internalType: "uint256",
-        name: "_brtBalance",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
         name: "_usdtBalance",
         type: "uint256",
       },
       {
         internalType: "uint256",
-        name: "_perRate",
+        name: "_rate",
         type: "uint256",
       },
       {
@@ -378,11 +336,6 @@ const _abi = [
       },
       {
         internalType: "uint256",
-        name: "brtAmount",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
         name: "usdtAmount",
         type: "uint256",
       },
@@ -465,19 +418,6 @@ const _abi = [
     type: "function",
   },
   {
-    inputs: [],
-    name: "price",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
     inputs: [
       {
         internalType: "uint256",
@@ -538,6 +478,37 @@ const _abi = [
       },
     ],
     name: "withdraw",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "to",
+        type: "address",
+      },
+    ],
+    name: "withdrawEth",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "token",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "to",
+        type: "address",
+      },
+    ],
+    name: "withdrawToken",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",

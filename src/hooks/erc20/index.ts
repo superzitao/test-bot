@@ -81,7 +81,7 @@ export const useBalanceOf = ({
     {
       ready: ready || true,
       refreshDeps: [ownerAddress, contract],
-      cacheKey: `${tokenAddress}-${ownerAddress}`,
+      // cacheKey: `${tokenAddress}-${ownerAddress}`,
     },
   )
 }

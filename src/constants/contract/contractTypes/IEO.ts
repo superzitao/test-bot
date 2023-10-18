@@ -29,12 +29,10 @@ import type {
 export interface IEOInterface extends utils.Interface {
   functions: {
     "AIBOT()": FunctionFragment;
-    "BRT()": FunctionFragment;
     "USDT()": FunctionFragment;
     "aibotTotalAmount()": FunctionFragment;
-    "brtTotalAmount()": FunctionFragment;
     "claim()": FunctionFragment;
-    "create(uint256,uint256,uint256,uint256)": FunctionFragment;
+    "create(uint256,uint256,uint256)": FunctionFragment;
     "deposit(uint256)": FunctionFragment;
     "depositDeadline()": FunctionFragment;
     "depositPerRate()": FunctionFragment;
@@ -45,21 +43,20 @@ export interface IEOInterface extends utils.Interface {
     "owner()": FunctionFragment;
     "paymentDeadline()": FunctionFragment;
     "payments(address)": FunctionFragment;
-    "price()": FunctionFragment;
     "purchase(uint256)": FunctionFragment;
     "setOwner(address)": FunctionFragment;
     "startTime()": FunctionFragment;
     "usdtTotalAmount()": FunctionFragment;
     "withdraw(address)": FunctionFragment;
+    "withdrawEth(address)": FunctionFragment;
+    "withdrawToken(address,address)": FunctionFragment;
   };
 
   getFunction(
     nameOrSignatureOrTopic:
       | "AIBOT"
-      | "BRT"
       | "USDT"
       | "aibotTotalAmount"
-      | "brtTotalAmount"
       | "claim"
       | "create"
       | "deposit"
@@ -72,29 +69,25 @@ export interface IEOInterface extends utils.Interface {
       | "owner"
       | "paymentDeadline"
       | "payments"
-      | "price"
       | "purchase"
       | "setOwner"
       | "startTime"
       | "usdtTotalAmount"
       | "withdraw"
+      | "withdrawEth"
+      | "withdrawToken"
   ): FunctionFragment;
 
   encodeFunctionData(functionFragment: "AIBOT", values?: undefined): string;
-  encodeFunctionData(functionFragment: "BRT", values?: undefined): string;
   encodeFunctionData(functionFragment: "USDT", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "aibotTotalAmount",
     values?: undefined
   ): string;
-  encodeFunctionData(
-    functionFragment: "brtTotalAmount",
-    values?: undefined
-  ): string;
   encodeFunctionData(functionFragment: "claim", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "create",
-    values: [BigNumberish, BigNumberish, BigNumberish, BigNumberish]
+    values: [BigNumberish, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "deposit",
@@ -127,7 +120,6 @@ export interface IEOInterface extends utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "payments", values: [string]): string;
-  encodeFunctionData(functionFragment: "price", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "purchase",
     values: [BigNumberish]
@@ -139,16 +131,16 @@ export interface IEOInterface extends utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "withdraw", values: [string]): string;
+  encodeFunctionData(functionFragment: "withdrawEth", values: [string]): string;
+  encodeFunctionData(
+    functionFragment: "withdrawToken",
+    values: [string, string]
+  ): string;
 
   decodeFunctionResult(functionFragment: "AIBOT", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "BRT", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "USDT", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "aibotTotalAmount",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "brtTotalAmount",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "claim", data: BytesLike): Result;
@@ -181,7 +173,6 @@ export interface IEOInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "payments", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "price", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "purchase", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "setOwner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "startTime", data: BytesLike): Result;
@@ -190,9 +181,17 @@ export interface IEOInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "withdrawEth",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "withdrawToken",
+    data: BytesLike
+  ): Result;
 
   events: {
-    "Claimed(address,uint256,uint256,uint256,uint256,uint256)": EventFragment;
+    "Claimed(address,uint256,uint256,uint256,uint256)": EventFragment;
     "Created(address,uint256,uint256)": EventFragment;
     "Deposit(address,address,uint256)": EventFragment;
     "OwnerChanged(address,address)": EventFragment;
@@ -211,13 +210,12 @@ export interface IEOInterface extends utils.Interface {
 export interface ClaimedEventObject {
   sender: string;
   aibotAmount: BigNumber;
-  brtAmount: BigNumber;
   usdtAmount: BigNumber;
   payment: BigNumber;
   refund: BigNumber;
 }
 export type ClaimedEvent = TypedEvent<
-  [string, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber],
+  [string, BigNumber, BigNumber, BigNumber, BigNumber],
   ClaimedEventObject
 >;
 
@@ -225,8 +223,8 @@ export type ClaimedEventFilter = TypedEventFilter<ClaimedEvent>;
 
 export interface CreatedEventObject {
   sender: string;
-  amount0: BigNumber;
-  amount1: BigNumber;
+  amount: BigNumber;
+  rate: BigNumber;
 }
 export type CreatedEvent = TypedEvent<
   [string, BigNumber, BigNumber],
@@ -311,22 +309,17 @@ export interface IEO extends BaseContract {
   functions: {
     AIBOT(overrides?: CallOverrides): Promise<[string]>;
 
-    BRT(overrides?: CallOverrides): Promise<[string]>;
-
     USDT(overrides?: CallOverrides): Promise<[string]>;
 
     aibotTotalAmount(overrides?: CallOverrides): Promise<[BigNumber]>;
-
-    brtTotalAmount(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     claim(
       overrides?: Overrides & { from?: string }
     ): Promise<ContractTransaction>;
 
     create(
-      _brtBalance: BigNumberish,
       _usdtBalance: BigNumberish,
-      _perRate: BigNumberish,
+      _rate: BigNumberish,
       _startTime: BigNumberish,
       overrides?: Overrides & { from?: string }
     ): Promise<ContractTransaction>;
@@ -348,9 +341,8 @@ export interface IEO extends BaseContract {
       account: string,
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, BigNumber, BigNumber, BigNumber, BigNumber] & {
+      [BigNumber, BigNumber, BigNumber, BigNumber] & {
         aibotAmount: BigNumber;
-        brtAmount: BigNumber;
         usdtAmount: BigNumber;
         payment: BigNumber;
         refund: BigNumber;
@@ -367,8 +359,6 @@ export interface IEO extends BaseContract {
     paymentDeadline(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     payments(arg0: string, overrides?: CallOverrides): Promise<[BigNumber]>;
-
-    price(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     purchase(
       amount: BigNumberish,
@@ -388,26 +378,32 @@ export interface IEO extends BaseContract {
       to: string,
       overrides?: Overrides & { from?: string }
     ): Promise<ContractTransaction>;
+
+    withdrawEth(
+      to: string,
+      overrides?: Overrides & { from?: string }
+    ): Promise<ContractTransaction>;
+
+    withdrawToken(
+      token: string,
+      to: string,
+      overrides?: Overrides & { from?: string }
+    ): Promise<ContractTransaction>;
   };
 
   AIBOT(overrides?: CallOverrides): Promise<string>;
 
-  BRT(overrides?: CallOverrides): Promise<string>;
-
   USDT(overrides?: CallOverrides): Promise<string>;
 
   aibotTotalAmount(overrides?: CallOverrides): Promise<BigNumber>;
-
-  brtTotalAmount(overrides?: CallOverrides): Promise<BigNumber>;
 
   claim(
     overrides?: Overrides & { from?: string }
   ): Promise<ContractTransaction>;
 
   create(
-    _brtBalance: BigNumberish,
     _usdtBalance: BigNumberish,
-    _perRate: BigNumberish,
+    _rate: BigNumberish,
     _startTime: BigNumberish,
     overrides?: Overrides & { from?: string }
   ): Promise<ContractTransaction>;
@@ -429,9 +425,8 @@ export interface IEO extends BaseContract {
     account: string,
     overrides?: CallOverrides
   ): Promise<
-    [BigNumber, BigNumber, BigNumber, BigNumber, BigNumber] & {
+    [BigNumber, BigNumber, BigNumber, BigNumber] & {
       aibotAmount: BigNumber;
-      brtAmount: BigNumber;
       usdtAmount: BigNumber;
       payment: BigNumber;
       refund: BigNumber;
@@ -448,8 +443,6 @@ export interface IEO extends BaseContract {
   paymentDeadline(overrides?: CallOverrides): Promise<BigNumber>;
 
   payments(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
-
-  price(overrides?: CallOverrides): Promise<BigNumber>;
 
   purchase(
     amount: BigNumberish,
@@ -470,23 +463,29 @@ export interface IEO extends BaseContract {
     overrides?: Overrides & { from?: string }
   ): Promise<ContractTransaction>;
 
+  withdrawEth(
+    to: string,
+    overrides?: Overrides & { from?: string }
+  ): Promise<ContractTransaction>;
+
+  withdrawToken(
+    token: string,
+    to: string,
+    overrides?: Overrides & { from?: string }
+  ): Promise<ContractTransaction>;
+
   callStatic: {
     AIBOT(overrides?: CallOverrides): Promise<string>;
-
-    BRT(overrides?: CallOverrides): Promise<string>;
 
     USDT(overrides?: CallOverrides): Promise<string>;
 
     aibotTotalAmount(overrides?: CallOverrides): Promise<BigNumber>;
 
-    brtTotalAmount(overrides?: CallOverrides): Promise<BigNumber>;
-
     claim(overrides?: CallOverrides): Promise<void>;
 
     create(
-      _brtBalance: BigNumberish,
       _usdtBalance: BigNumberish,
-      _perRate: BigNumberish,
+      _rate: BigNumberish,
       _startTime: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
@@ -505,9 +504,8 @@ export interface IEO extends BaseContract {
       account: string,
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, BigNumber, BigNumber, BigNumber, BigNumber] & {
+      [BigNumber, BigNumber, BigNumber, BigNumber] & {
         aibotAmount: BigNumber;
-        brtAmount: BigNumber;
         usdtAmount: BigNumber;
         payment: BigNumber;
         refund: BigNumber;
@@ -525,8 +523,6 @@ export interface IEO extends BaseContract {
 
     payments(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    price(overrides?: CallOverrides): Promise<BigNumber>;
-
     purchase(amount: BigNumberish, overrides?: CallOverrides): Promise<void>;
 
     setOwner(_owner: string, overrides?: CallOverrides): Promise<void>;
@@ -536,13 +532,20 @@ export interface IEO extends BaseContract {
     usdtTotalAmount(overrides?: CallOverrides): Promise<BigNumber>;
 
     withdraw(to: string, overrides?: CallOverrides): Promise<void>;
+
+    withdrawEth(to: string, overrides?: CallOverrides): Promise<void>;
+
+    withdrawToken(
+      token: string,
+      to: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
   };
 
   filters: {
-    "Claimed(address,uint256,uint256,uint256,uint256,uint256)"(
+    "Claimed(address,uint256,uint256,uint256,uint256)"(
       sender?: string | null,
       aibotAmount?: null,
-      brtAmount?: null,
       usdtAmount?: null,
       payment?: null,
       refund?: null
@@ -550,7 +553,6 @@ export interface IEO extends BaseContract {
     Claimed(
       sender?: string | null,
       aibotAmount?: null,
-      brtAmount?: null,
       usdtAmount?: null,
       payment?: null,
       refund?: null
@@ -558,13 +560,13 @@ export interface IEO extends BaseContract {
 
     "Created(address,uint256,uint256)"(
       sender?: string | null,
-      amount0?: null,
-      amount1?: null
+      amount?: null,
+      rate?: null
     ): CreatedEventFilter;
     Created(
       sender?: string | null,
-      amount0?: null,
-      amount1?: null
+      amount?: null,
+      rate?: null
     ): CreatedEventFilter;
 
     "Deposit(address,address,uint256)"(
@@ -613,20 +615,15 @@ export interface IEO extends BaseContract {
   estimateGas: {
     AIBOT(overrides?: CallOverrides): Promise<BigNumber>;
 
-    BRT(overrides?: CallOverrides): Promise<BigNumber>;
-
     USDT(overrides?: CallOverrides): Promise<BigNumber>;
 
     aibotTotalAmount(overrides?: CallOverrides): Promise<BigNumber>;
 
-    brtTotalAmount(overrides?: CallOverrides): Promise<BigNumber>;
-
     claim(overrides?: Overrides & { from?: string }): Promise<BigNumber>;
 
     create(
-      _brtBalance: BigNumberish,
       _usdtBalance: BigNumberish,
-      _perRate: BigNumberish,
+      _rate: BigNumberish,
       _startTime: BigNumberish,
       overrides?: Overrides & { from?: string }
     ): Promise<BigNumber>;
@@ -660,8 +657,6 @@ export interface IEO extends BaseContract {
 
     payments(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    price(overrides?: CallOverrides): Promise<BigNumber>;
-
     purchase(
       amount: BigNumberish,
       overrides?: Overrides & { from?: string }
@@ -680,27 +675,33 @@ export interface IEO extends BaseContract {
       to: string,
       overrides?: Overrides & { from?: string }
     ): Promise<BigNumber>;
+
+    withdrawEth(
+      to: string,
+      overrides?: Overrides & { from?: string }
+    ): Promise<BigNumber>;
+
+    withdrawToken(
+      token: string,
+      to: string,
+      overrides?: Overrides & { from?: string }
+    ): Promise<BigNumber>;
   };
 
   populateTransaction: {
     AIBOT(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    BRT(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
     USDT(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     aibotTotalAmount(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    brtTotalAmount(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     claim(
       overrides?: Overrides & { from?: string }
     ): Promise<PopulatedTransaction>;
 
     create(
-      _brtBalance: BigNumberish,
       _usdtBalance: BigNumberish,
-      _perRate: BigNumberish,
+      _rate: BigNumberish,
       _startTime: BigNumberish,
       overrides?: Overrides & { from?: string }
     ): Promise<PopulatedTransaction>;
@@ -740,8 +741,6 @@ export interface IEO extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    price(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
     purchase(
       amount: BigNumberish,
       overrides?: Overrides & { from?: string }
@@ -757,6 +756,17 @@ export interface IEO extends BaseContract {
     usdtTotalAmount(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     withdraw(
+      to: string,
+      overrides?: Overrides & { from?: string }
+    ): Promise<PopulatedTransaction>;
+
+    withdrawEth(
+      to: string,
+      overrides?: Overrides & { from?: string }
+    ): Promise<PopulatedTransaction>;
+
+    withdrawToken(
+      token: string,
       to: string,
       overrides?: Overrides & { from?: string }
     ): Promise<PopulatedTransaction>;

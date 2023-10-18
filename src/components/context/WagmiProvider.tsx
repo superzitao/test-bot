@@ -15,7 +15,7 @@ const metadata = {
   icons: ['https://avatars.githubusercontent.com/u/37784886'],
 }
 
-const chains = [mainnet, arbitrum, goerli]
+const chains = [mainnet, goerli]
 const wagmiConfig = defaultWagmiConfig({ chains, projectId, metadata })
 
 // 3. Create modal
