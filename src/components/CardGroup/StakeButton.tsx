@@ -3,28 +3,14 @@ import { useAllowance, useApprove, useBalanceOf } from '@/hooks/erc20'
 import {
   useDepositAibot,
   useDepositEndCountdown,
-  usePaymentEndCountdown,
   useStartTimeCountDown,
 } from '@/hooks/ieo'
-import {
-  Alert as MuiAlert,
-  Button,
-  CircularProgress,
-  AlertProps,
-  OutlinedInput,
-} from '@mui/material'
+import { Button, CircularProgress, OutlinedInput } from '@mui/material'
 import { parseEther } from 'ethers/lib/utils'
-import { forwardRef, useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'react-toastify'
 
 import { useAccount } from 'wagmi'
-
-const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(
-  props,
-  ref,
-) {
-  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />
-})
 
 const StakeButton = ({
   onDepositSuccess,
@@ -32,14 +18,9 @@ const StakeButton = ({
   onDepositSuccess: () => void
 }) => {
   const [amount, setAmount] = useState('')
-  // const debouncedAmount = useDebounce(amount, 500)
 
   const { address } = useAccount()
 
-  // const { data: balance } = useBalance({
-  //   address,
-  //   token: AIBOT_ADDRESS,
-  // })
   const { data: aibotBalance, refresh: refreshAibotBalance } = useBalanceOf({
     tokenAddress: AIBOT_ADDRESS,
     ownerAddress: address,
@@ -60,8 +41,10 @@ const StakeButton = ({
   console.log('>>>> allowance: ', aibotAllowance?.toString())
 
   const [startTimeCountDown, formattedRes] = useStartTimeCountDown()
-  const [depositEndCountdown] = useDepositEndCountdown()
-  console.log('depositEndCountdown:', depositEndCountdown)
+  const {
+    countdown: [depositEndCountdown],
+    isValid,
+  } = useDepositEndCountdown()
 
   const { run: depositAibot, loading: isDepositingAibot } = useDepositAibot({
     onSuccess: () => {
@@ -84,6 +67,7 @@ const StakeButton = ({
     },
   )
 
+  const isDepositEnded = isValid && depositEndCountdown <= 0
   const isLoading = isApproving || isDepositingAibot
 
   const { days, hours, minutes, seconds } = formattedRes
@@ -94,7 +78,7 @@ const StakeButton = ({
     if (startTimeCountDown > 0)
       return `Start in ${days} d ${hours} h ${minutes} m ${seconds} s`
 
-    // if (depositEndCountdown <= 0) return 'Ended'
+    if (isDepositEnded) return 'Ended'
 
     if (!amount) return 'Stake'
 
@@ -127,7 +111,7 @@ const StakeButton = ({
     !amount ||
     !isBalanceSufficient ||
     startTimeCountDown > 0 ||
-    depositEndCountdown <= 0
+    isDepositEnded
 
   return (
     <>

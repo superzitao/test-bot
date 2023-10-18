@@ -125,12 +125,16 @@ const CommitCard = () => {
 
   const isLoading = isApproving || isCommitingUsdt || isClaiming
 
-  const [paymentEndTimeCountDown] = usePaymentEndCountdown()
+  const {
+    countdown: [paymentEndTimeCountDown],
+    isValid,
+  } = usePaymentEndCountdown()
+  const isPaymentEnded = isValid && paymentEndTimeCountDown <= 0
 
   const getLabel = () => {
     if (isLoading) return <CircularProgress sx={{ color: '#FFF' }} size={36} />
 
-    if (paymentEndTimeCountDown <= 0) return 'Claim'
+    if (isPaymentEnded) return 'Claim'
 
     if (!amount) return 'Commit'
 
@@ -143,7 +147,7 @@ const CommitCard = () => {
     console.log('in click')
     if (!usdtAllowance) return
 
-    if (paymentEndTimeCountDown <= 0) {
+    if (isPaymentEnded) {
       return claim()
     }
 
