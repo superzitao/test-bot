@@ -61,6 +61,7 @@ const StakeButton = ({
 
   const [startTimeCountDown, formattedRes] = useStartTimeCountDown()
   const [depositEndCountdown] = useDepositEndCountdown()
+  console.log('depositEndCountdown:', depositEndCountdown)
 
   const { run: depositAibot, loading: isDepositingAibot } = useDepositAibot({
     onSuccess: () => {
@@ -93,7 +94,7 @@ const StakeButton = ({
     if (startTimeCountDown > 0)
       return `Start in ${days} d ${hours} h ${minutes} m ${seconds} s`
 
-    if (depositEndCountdown <= 0) return 'Ended'
+    // if (depositEndCountdown <= 0) return 'Ended'
 
     if (!amount) return 'Stake'
 
