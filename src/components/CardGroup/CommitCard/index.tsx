@@ -4,12 +4,10 @@ import { useAllowance, useApprove, useBalanceOf } from '@/hooks/erc20'
 import {
   useClaim,
   useCommitUsdt,
-  useDepositDeadline,
-  usePaymentDeadlineCall,
   usePaymentEndCountdown,
   usePayments,
   usePurchaseAmount,
-  useStartTime,
+  useUserDepositAibot,
 } from '@/hooks/ieo'
 import { formatNumber } from '@/utils/number'
 import {
@@ -26,7 +24,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { toast } from 'react-toastify'
-import { useAccount, useContractRead } from 'wagmi'
+import { useAccount } from 'wagmi'
 
 const Wrapper = styled(Box)`
   margin-top: 86px;
@@ -125,6 +123,11 @@ const CommitCard = () => {
 
   const isLoading = isApproving || isCommitingUsdt || isClaiming
 
+  const { data: userDepositAibot, refresh: refreshUserDepositAibot } =
+    useUserDepositAibot()
+
+  const isClaimEnabled = userDepositAibot?.lt(0)
+
   const {
     countdown: [paymentEndTimeCountDown],
     isValid,
@@ -147,7 +150,7 @@ const CommitCard = () => {
     console.log('in click')
     if (!usdtAllowance) return
 
-    if (isPaymentEnded) {
+    if (isPaymentEnded && isClaimEnabled) {
       return claim()
     }
 
@@ -163,7 +166,11 @@ const CommitCard = () => {
     }
   }
 
-  const isDisabled = isLoading || !amount || !isBalanceSufficient
+  const isDisabled =
+    isLoading ||
+    !amount ||
+    !isBalanceSufficient ||
+    (isPaymentEnded && !isClaimEnabled)
 
   const percentage =
     allocation && userCommited && allocation.lt(0) && userCommited.lt(0)
@@ -172,6 +179,12 @@ const CommitCard = () => {
             (allocation.toBigInt() + userCommited.toBigInt()),
         )
       : 0
+
+  // const { data: finalAllocation } = useFinalAllocation()
+  // console.log('>finalAllocation: ', finalAllocation?.aibotAmount.toString())
+  // console.log('>finalAllocation: ', finalAllocation?.usdtAmount.toString())
+  // console.log('>finalAllocation: ', finalAllocation?.refund.toString())
+  // console.log('>finalAllocation: ', finalAllocation?.payment.toString())
 
   return (
     <Wrapper>
