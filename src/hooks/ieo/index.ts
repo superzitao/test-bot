@@ -279,8 +279,6 @@ export const useStartTimeCountDown = (options?: { onEnd: () => void }) => {
 export const useDepositEndCountdown = (options?: { onEnd?: () => void }) => {
   const { data: depositEndTime } = useDepositDeadline()
 
-  // console.log('depositEndTime: ', new Date(depositEndTime?.toNumber() * 1000))
-
   return useCountDown({
     targetDate: depositEndTime ? depositEndTime?.toNumber() * 1000 : undefined,
     onEnd: options?.onEnd,

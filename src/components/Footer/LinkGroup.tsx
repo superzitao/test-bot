@@ -1,4 +1,4 @@
-import { Typography, styled } from '@mui/material'
+import { Box, Typography, styled } from '@mui/material'
 import Link from 'next/link'
 import React from 'react'
 import { FlexCol, FlexRow, RowCenter, RowCenterY } from '../common'
@@ -27,7 +27,15 @@ const DisabledLink = styled(Typography)`
 
 const LinkGroup = () => {
   return (
-    <FlexRow sx={{ gap: 73 }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
+        columnGap: 73,
+        rowGap: 26,
+        flexWrap: 'wrap',
+      }}
+    >
       <FlexCol sx={{ gap: 10 }}>
         <TextTitle>Links</TextTitle>
 
@@ -74,7 +82,7 @@ const LinkGroup = () => {
         <TextTitle>Legals</TextTitle>
         <StyledLink href="/">Terms & Conditions</StyledLink>
       </FlexCol>
-    </FlexRow>
+    </Box>
   )
 }
 

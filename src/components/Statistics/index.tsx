@@ -1,4 +1,4 @@
-import { Box, Typography, styled } from '@mui/material'
+import { Box, Typography, styled, useMediaQuery, useTheme } from '@mui/material'
 import React from 'react'
 import { ColCenterX, FlexCol, RowCenterY } from '../common'
 import Image from 'next/image'
@@ -28,6 +28,9 @@ const TextValue = styled(Typography)`
 `
 
 const Statistics = () => {
+  const theme = useTheme()
+  const upMd = useMediaQuery(theme.breakpoints.up('md'))
+
   return (
     <Wrapper>
       <Box sx={{ position: 'relative' }}>
@@ -47,7 +50,14 @@ const Statistics = () => {
         /> */}
       </Box>
 
-      <RowCenterY sx={{ gap: 54, mt: 70 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          gap: 54,
+          mt: 70,
+        }}
+      >
         <FlexCol sx={{ gap: 32 }}>
           <FlexCol sx={{ gap: 10 }}>
             <TextTitle>Token Name:</TextTitle>
@@ -65,8 +75,12 @@ const Statistics = () => {
           </FlexCol>
         </FlexCol>
 
-        <Image src="/chart.png" width={432} height={347} alt="tokenomics" />
-      </RowCenterY>
+        {upMd ? (
+          <Image src="/chart.png" width={432} height={347} alt="tokenomics" />
+        ) : (
+          <Image src="/chart.png" width={346} height={278} alt="tokenomics" />
+        )}
+      </Box>
     </Wrapper>
   )
 }

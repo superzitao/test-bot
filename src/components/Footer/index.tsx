@@ -9,7 +9,15 @@ const Footer = () => {
   return (
     <>
       <Box sx={{ borderTop: '1px solid rgba(255,255,255,0.5)' }}>
-        <RowCenterBetween sx={{ maxWidth: 1100, mx: 'auto', py: 70 }}>
+        <RowCenterBetween
+          sx={{
+            maxWidth: 1100,
+            mx: 'auto',
+            py: 70,
+            flexDirection: { xs: 'column', md: 'row' },
+            rowGap: 20,
+          }}
+        >
           <FlexCol>
             <Image src="/logo-large.svg" alt="logo" width={234} height={64} />
 

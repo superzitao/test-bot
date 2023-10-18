@@ -17,7 +17,9 @@ const Wrapper = styled(RowCenterX)`
 
 const CardGroup = () => {
   return (
-    <Wrapper sx={{ pt: 50, gap: 24, pb: 80 }}>
+    <Wrapper
+      sx={{ pt: 50, columnGap: 24, pb: 80, flexWrap: 'wrap', rowGap: 60 }}
+    >
       <ColCenterX>
         <Image src="/stake.png" width={184} height={184} alt="stake" priority />
 
@@ -67,6 +69,7 @@ const CardGroup = () => {
 
             opacity: 0.8,
             mt: 6,
+            textAlign: 'center',
           }}
         >
           For every 10,000,000 AIBOT staked, you will get 100 USDT quota
@@ -75,7 +78,7 @@ const CardGroup = () => {
         <StakeCard />
       </ColCenterX>
 
-      <ColCenterX sx={{ minWidth: 544 }}>
+      <ColCenterX sx={{ minWidth: { xs: 'unset', md: 544 } }}>
         <Image
           src="/commit.png"
           width={184}

@@ -26,7 +26,8 @@ const Wrapper = styled(Box)`
 
   background: #211c32;
   padding: 24px;
-  width: 428px;
+  max-width: 428px;
+  min-width: 372px;
   border: 1px solid rgba(256, 256, 256, 0.44);
   border-radius: 21px;
 

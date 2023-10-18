@@ -32,6 +32,3 @@ const IeoPage = () => {
 }
 
 export default IeoPage
-function setIsMounted(arg0: boolean) {
-  throw new Error('Function not implemented.')
-}
