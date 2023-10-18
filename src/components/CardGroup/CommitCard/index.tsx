@@ -276,7 +276,11 @@ const CommitCard = () => {
           Available: {usdtBalance ? formatNumber(usdtBalance, 6) : '-'} USDT
         </Typography>
 
-        <Link href="/" style={{ textDecorationLine: 'none', color: 'unset' }}>
+        <Link
+          target="_blank"
+          href="https://app.uniswap.org/swap?inputCurrency=ETH&outputCurrency=0xdAC17F958D2ee523a2206206994597C13D831ec7&chain=mainnet"
+          style={{ textDecorationLine: 'none', color: 'unset' }}
+        >
           <Typography
             sx={{
               fontSize: '16px',

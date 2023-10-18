@@ -106,7 +106,11 @@ const StakeCard = () => {
       <RowCenterBetween sx={{ mt: 30 }}>
         <AvailableAmount data={aibotBalance} />
 
-        <Link href="/" style={{ textDecorationLine: 'none', color: 'unset' }}>
+        <Link
+          target="_blank"
+          href="https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0xaa7fe5c1b2af196ccd20b2fcbe80b5a81f7e98c2&chain=mainnet"
+          style={{ textDecorationLine: 'none', color: 'unset' }}
+        >
           <Typography
             sx={{
               fontSize: '16px',
