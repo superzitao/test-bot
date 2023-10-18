@@ -268,8 +268,6 @@ export const usePaymentDeadlineCall = () => {
 export const useStartTimeCountDown = (options?: { onEnd: () => void }) => {
   const { data: startTime } = useStartTime()
 
-  // console.log('startTime: ', new Date(startTime?.toNumber() * 1000))
-
   return useCountDown({
     targetDate: startTime ? startTime?.toNumber() * 1000 : undefined,
     onEnd: options?.onEnd,
@@ -279,10 +277,13 @@ export const useStartTimeCountDown = (options?: { onEnd: () => void }) => {
 export const useDepositEndCountdown = (options?: { onEnd?: () => void }) => {
   const { data: depositEndTime } = useDepositDeadline()
 
-  return useCountDown({
+  const countdown = useCountDown({
     targetDate: depositEndTime ? depositEndTime?.toNumber() * 1000 : undefined,
+    // targetDate: depositEndTime ? '2023-10-18 17:21:00' : undefined,
     onEnd: options?.onEnd,
   })
+
+  return { countdown, isValid: !!depositEndTime }
 }
 
 export const usePaymentEndCountdown = (options?: { onEnd?: () => void }) => {
@@ -290,9 +291,11 @@ export const usePaymentEndCountdown = (options?: { onEnd?: () => void }) => {
 
   // console.log('paymentEndTime: ', new Date(paymentEndTime?.toNumber() * 1000))
 
-  return useCountDown({
+  const countdown = useCountDown({
     targetDate: paymentEndTime ? paymentEndTime?.toNumber() * 1000 : undefined,
     // targetDate: paymentEndTime ? '2023-10-18 13:59:00' : undefined,
     onEnd: options?.onEnd,
   })
+
+  return { countdown, isValid: !!paymentEndTime }
 }
