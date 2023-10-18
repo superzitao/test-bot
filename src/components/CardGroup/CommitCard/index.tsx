@@ -230,7 +230,7 @@ const CommitCard = () => {
           },
         }}
         variant="determinate"
-        value={percentage}
+        value={percentage > 100 ? 100 : percentage}
       />
 
       <Typography
