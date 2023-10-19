@@ -66,34 +66,6 @@ const CommitCard = () => {
 
   const { data: allocation, refresh: refreshAllocation } = usePurchaseAmount()
 
-  // const { data: allocation, refetch: refreshAllocation } = useContractRead({
-  //   address: IEO_ADDRESS,
-  //   abi: [
-  //     {
-  //       inputs: [
-  //         {
-  //           internalType: 'address',
-  //           name: 'account',
-  //           type: 'address',
-  //         },
-  //       ],
-  //       name: 'getPurchaseAmount',
-  //       outputs: [
-  //         {
-  //           internalType: 'uint256',
-  //           name: '',
-  //           type: 'uint256',
-  //         },
-  //       ],
-  //       stateMutability: 'view',
-  //       type: 'function',
-  //     },
-  //   ] as const,
-  //   functionName: 'getPurchaseAmount',
-  //   enabled: !!address,
-  //   args: [address || '0x'],
-  // })
-
   const { runAsync: approve, loading: isApproving } = useApprove(USDT_ADDRESS, {
     onSuccess: () => {
       refreshUsdtAllowance()
@@ -172,13 +144,27 @@ const CommitCard = () => {
     !isBalanceSufficient ||
     (isPaymentEnded && !isClaimEnabled)
 
+  // console.log('allocation:', allocation?.toString())
+  // console.log('userCommited:', userCommited?.toString())
+  // console.log(
+  //   'userCommited + allocation:',
+  //   allocation?.toBigInt() + userCommited?.toBigInt(),
+  // )
+
   const percentage =
-    allocation && userCommited && allocation.lt(0) && userCommited.lt(0)
+    allocation && userCommited && (allocation.gt(0) || userCommited.gt(0))
       ? Number(
           (userCommited.toBigInt() * BigInt(100)) /
             (allocation.toBigInt() + userCommited.toBigInt()),
         )
       : 0
+  // console.log(
+  //   'con: ',
+  //   allocation && userCommited && (allocation.lt(0) || userCommited.lt(0)),
+  // )
+  // console.log('allocation.lt(0): ', allocation.lt(0))
+  // console.log('userCommited.lt(0): ', userCommited.lt(0))
+  // console.log('percentage: ', percentage)
 
   // const { data: finalAllocation } = useFinalAllocation()
   // console.log('>finalAllocation: ', finalAllocation?.aibotAmount.toString())
