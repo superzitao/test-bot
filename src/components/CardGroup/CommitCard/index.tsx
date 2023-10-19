@@ -98,7 +98,7 @@ const CommitCard = () => {
   const { data: userDepositAibot, refresh: refreshUserDepositAibot } =
     useUserDepositAibot()
 
-  const isClaimEnabled = userDepositAibot?.lt(0)
+  const isClaimEnabled = userDepositAibot?.gt(0)
 
   const {
     countdown: [paymentEndTimeCountDown],
