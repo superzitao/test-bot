@@ -2,12 +2,10 @@ import { RowCenterBetween, RowCenterY } from '@/components/common'
 import { IEO_ADDRESS, USDT_ADDRESS } from '@/constants/token'
 import { useAllowance, useApprove, useBalanceOf } from '@/hooks/erc20'
 import {
-  useClaim,
   useCommitUsdt,
   usePaymentEndCountdown,
   usePayments,
   usePurchaseAmount,
-  useUserDepositAibot,
 } from '@/hooks/ieo'
 import { formatNumber } from '@/utils/number'
 import {
@@ -85,15 +83,7 @@ const CommitCard = () => {
     },
   })
 
-  const { run: claim, loading: isClaiming } = useClaim({
-    onSuccess: () => {
-      toast.success('Claim Successfully!', {
-        toastId: 'claim',
-      })
-    },
-  })
-
-  const isLoading = isApproving || isCommitingUsdt || isClaiming
+  const isLoading = isApproving || isCommitingUsdt
 
   const {
     countdown: [paymentEndTimeCountDown],
