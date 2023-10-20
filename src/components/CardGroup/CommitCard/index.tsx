@@ -95,11 +95,6 @@ const CommitCard = () => {
 
   const isLoading = isApproving || isCommitingUsdt || isClaiming
 
-  const { data: userDepositAibot, refresh: refreshUserDepositAibot } =
-    useUserDepositAibot()
-
-  const isClaimEnabled = userDepositAibot?.gt(0)
-
   const {
     countdown: [paymentEndTimeCountDown],
     isValid,
@@ -109,7 +104,7 @@ const CommitCard = () => {
   const getLabel = () => {
     if (isLoading) return <CircularProgress sx={{ color: '#FFF' }} size={36} />
 
-    if (isPaymentEnded) return 'Claim'
+    if (isPaymentEnded) return 'Ended'
 
     if (!amount) return 'Commit'
 
@@ -122,8 +117,8 @@ const CommitCard = () => {
     console.log('in click')
     if (!usdtAllowance) return
 
-    if (isPaymentEnded && isClaimEnabled) {
-      return claim()
+    if (isPaymentEnded) {
+      return
     }
 
     if (!isAllowanceSufficient) {
@@ -139,10 +134,7 @@ const CommitCard = () => {
   }
 
   const isDisabled =
-    isLoading ||
-    !amount ||
-    !isBalanceSufficient ||
-    (isPaymentEnded && !isClaimEnabled)
+    isLoading || !amount || !isBalanceSufficient || isPaymentEnded
 
   // console.log('allocation:', allocation?.toString())
   // console.log('userCommited:', userCommited?.toString())
@@ -319,7 +311,7 @@ const CommitCard = () => {
 
       <OutlinedInput
         color="secondary"
-        disabled={paymentEndTimeCountDown <= 0}
+        disabled={isPaymentEnded}
         sx={{ mt: 10, borderRadius: '16px', height: 61 }}
         placeholder="Commit Amount"
         endAdornment="USDT"
@@ -331,7 +323,7 @@ const CommitCard = () => {
       <Button
         variant="contained"
         color="secondary"
-        disabled={paymentEndTimeCountDown > 0 && isDisabled}
+        disabled={isDisabled}
         sx={{
           mt: 10,
           height: 61,
